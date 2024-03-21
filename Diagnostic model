@@ -1,0 +1,61 @@
+
+otu <- read.table("species_table.txt", header=T, row.names = 1, sep="\t")
+otu$group <- as.factor(otu$group)
+table(otu$group)
+
+selected_markers <-  read.csv("selected_markers.csv")
+otu_select_name <- selected_markers$species
+
+otu <- otu[,c('group',otu_select_name)]
+
+set.seed(072711)
+ind = sample(2,nrow(otu),replace = TRUE,prob = c(0.7,0.3))
+trainset = otu[ind == 1,]
+testset = otu[ind == 2,]
+table(trainset$group)
+
+library(randomForest)
+library(caret)
+library(e1071)
+
+trControl <- trainControl(method = "cv", number = 5, search ="grid", savePredictions = TRUE)
+
+set.seed(100)
+fit_rf2 <- train(group~ .,
+                 trainset,  method = "rf",
+                 metric = "Accuracy",
+                 tuneGrid = tuneGrid2,
+                 trControl = trControl,
+                 importance = TRUE,
+                 nodesize = 15,
+                 maxnodes =20,
+                 ntree = 800)
+print(fit_rf2)
+
+importance <- varImp(fit_rf2,scale=FALSE)
+
+#training set
+set.seed(100)
+train_predict <- predict(fit_rf2, trainset)
+compare_train <- table(train_predict, trainset$group)
+compare_train
+sum(diag(compare_train)/sum(compare_train))
+confusionMatrix(train_predict,trainset$group) 
+
+prediction_prob <- predict(fit_rf2, newdata=trainset, type="prob")
+library(pROC)
+roc_curve_train <- roc(trainset$group, prediction_prob[,1])
+roc_curve_train
+
+#testset
+test_predict <- predict(fit_rf2, testset)
+compare_test <- table(testset$group, test_predict, dnn = c('Actual', 'Predicted'))
+compare_test
+confusionMatrix(test_predict,testset$group) 
+
+prediction_prob <- predict(fit_rf2, newdata=testset, type="prob")
+library(pROC)
+roc_curve_test <- roc(testset$group, prediction_prob[,1])
+roc_curve_test
+AUC_CI <- ci.auc(testset$group, prediction_prob[,1]) 
+AUC_CI
