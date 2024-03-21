@@ -1,0 +1,70 @@
+library("phyloseq"); packageVersion("phyloseq")
+library("ggplot2"); packageVersion("ggplot2")
+
+#----physeq----
+tax <- read.table("PWY_TAXA.txt", header=T, row.names=1, sep="\t")
+otu <- read.table("PWY_OTU.txt", header=T, row.names=1, sep="\t")
+design <- read.table("metadata.txt", header=T, row.names=1, sep="\t")
+OTU <- as.matrix(otu) %>%  otu_table(taxa_are_rows = T)
+TAX <- as.matrix(tax) %>%  tax_table()
+samples <-  sample_data(design)
+
+physeq <- phyloseq(OTU, TAX, samples)
+physeq
+
+library(vegan)
+set.seed(1)
+physeq_bray <- phyloseq::distance(physeq, method = "bray")
+
+# get reference samples
+ref.samples <- sample_names(subset_samples(physeq, 
+                                           group == "Controls"))
+
+library(tidyverse)
+jj1<-as.matrix(physeq_bray) %>% as.data.frame.table(responseName = "value")
+
+jj2 <- jj1 %>%
+  filter(Var1 != Var2) %>%   
+  filter(Var1 %in% ref.samples) %>%  
+  group_by(Var2) %>%
+  summarise(score = median(value)) %>%  
+  as.data.frame()  
+
+colnames(jj2)[1] <- "ids"
+main.sam.df <-data.frame(sample_data(physeq))
+rownames(jj2) <- jj2$ids
+q<- cbind(dplyr::select(jj2, -ids), main.sam.df)
+  
+library(dplyr)
+dysbiosis_thres9 <- quantile(subset(q, group == "Controls")$score, 0.9)
+q  <- q%>%
+  mutate(isDysbiostic = ifelse(score >= dysbiosis_thres9, TRUE, FALSE))
+
+q %>% dplyr::count(group, isDysbiostic)
+
+library(ggplot2)
+q$group <- factor(q$group,levels = c("Controls","CD","UC")) 
+p1 <-  ggplot(data = q) +
+  geom_density(aes(x = score, fill = group), alpha = 0.7) +
+  geom_vline(aes(xintercept = dysbiosis_thres9),color = "black",linetype="dashed",size=1)+
+  #geom_vline(aes(xintercept = normobiosis_thres ),color = "red",linetype="dashed",size=1)+
+  scale_fill_manual(values = c("#33928F","#E17153","#E1C05E"))+
+  xlab("Functional Dysbiosis Score") +
+  ylab("Density") +
+  theme(axis.text.x=element_text(size = 17))+
+  theme(axis.text.y=element_text(size = 17))+
+  theme(axis.title.y=element_text(size = 18,face = "bold"))+
+  theme(axis.title.x=element_text(size = 18,face = "bold"))+
+  theme(legend.title=element_text(size = 17,face = "bold"))+
+  theme(legend.text=element_text(size = 15))+
+  theme(panel.grid = element_blank(), 
+        panel.background = element_rect(color = 'black', fill = 'transparent')
+  )+
+  scale_x_continuous(limits = c(0, 0.5), breaks = seq(0, 0.46, 0.1),expand=c(0.01,0)) +
+  theme(panel.border = element_rect(fill=NA,color="black", size=1, linetype="solid"))+
+  theme(axis.text = element_text(color = 'black'),
+        legend.position = 'none') 
+
+p1
+ggsave(p1,filename="DysbiosisScore_DENSITY_pwy.png", width=10.5, height=5.3)
+  
