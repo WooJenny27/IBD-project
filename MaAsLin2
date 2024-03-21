@@ -1,0 +1,12 @@
+library(Maaslin2)
+
+df_input_data <- read.csv("sepcies_table.csv", header=T, row.names=1)
+df_input_metadata <- read.table("metadata_table.txt", header=T, row.names=1, sep="\t")
+
+fit_data = Maaslin2(
+  input_data = df_input_data, 
+  input_metadata = df_input_metadata, 
+  output = "output",    
+  fixed_effects = c("group","Age","Gender"),
+  plot_heatmap = TRUE,
+  reference = c("group,Controls"))
