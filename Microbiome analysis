@@ -1,0 +1,12 @@
+#kneaddata
+parallel -j 1 --xapply 'kneaddata -i /path_to_file/{}_1.fastq.gz -i /path_to_file/{}_2.fastq.gz \
+-o /path_to_output_file/ -v -t 3 --bypass-trf \
+--trimmomatic-options "ILLUMINACLIP:~/software/Trimmomatic-0.39/adapters/TruSeq3-PE.fa:2:40:15 SLIDINGWINDOW:4:20 MINLEN:50"  \
+--remove-intermediate-output  --bowtie2-options "--very-sensitive --dovetail" \
+-db /srv/db/kneaddata
+
+#metaphlan3
+
+
+
+#humann3
