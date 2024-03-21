@@ -1,0 +1,35 @@
+library(ggplot2)
+library(reshape2)
+
+data <-  read.table("CD_species_table.txt",header = T, row.names=1,sep = "\t")
+
+selected_markers <-  read.csv("selected_markers.csv")
+otu_select_name <- selected_markers$species
+
+data <- data[,c('group',otu_select_name)]
+data$group <- as.factor(data$group)
+data_m = melt(data, id = "group")
+
+gg = ggplot(data_m, aes(x = variable, y = value, fill = group)) + 
+  geom_boxplot(colour = "black")+
+  scale_y_log10(labels = scales::scientific) +
+  scale_y_continuous(breaks = 10^(-100:100), labels = scales::trans_format("log10", scales::math_format(10^.x)),  trans="log10")+
+  facet_grid(~kkk, scales = "free", space = "free")+
+  theme(legend.title = element_text(size = 18), 
+        legend.text = element_text(size = 18), legend.position = "right", 
+        axis.text.x = element_text(colour = "black", size = 15,angle =65, vjust =1, hjust =1), 
+        axis.text.y = element_text( size = 18, colour = "black"), 
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 18, colour = "black", face = "bold"),
+        panel.background = element_blank(), 
+        strip.text = element_text( size = 18, color = "black", face = "bold"),
+        strip.background = element_rect(fill = "gray",color="black"),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        legend.key=element_blank()) + 
+  labs( y = "Relative Abundance (%)", fill = "group") + 
+  scale_fill_manual(values = c("#E17153","#33928F"))+
+  theme(panel.border = element_rect(fill=NA,color="black", 
+                                    size=1, linetype="solid"))
+gg
+
+ggsave(gg, file='facet_abundance.png', width=13, height = 6)
