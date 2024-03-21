@@ -6,7 +6,27 @@ parallel -j 1 --xapply 'kneaddata -i /path_to_file/{}_1.fastq.gz -i /path_to_fil
 -db /srv/db/kneaddata
 
 #metaphlan3
+parallel -j 1  --xapply 'metaphlan /path_to_output_file/{}_R1_kneaddata_paired_1.fastq,/path_to_output_file/{}_R1_kneaddata_paired_2.fastq \
+--bowtie2out /path_to_output_file/metaphlan3/{}_bowtie2 \
+--nproc 5 --input_type fastq  \
+--bowtie2db /srv/db/metaphlan3/201901 \
+-o /path_to_output_file/metaphlan3/{}_metaphlan'  \
+:::: /path_to_file/samp_list.txt
 
+#merge results
+merge_metaphlan_tables.py /path_to_output_file/metaphlan3/*_metaphlan > /path_to_output_file/metaphlan3/merged_abundance_table.txt
 
+#remove taxa id
+awk '{$2 = null; print $0}'  /path_to_output_file/metaphlan3/merged_abundance_table.txt > /path_to_output_file/metaphlan3/merged_abundance_table_noID.txt
+
+#get species level
+grep -E '(s__)|(clade_name)' /path_to_output_file/metaphlan3/merged_abundance_table_noID.txt |grep -v 't__'|sed 's/^.*s__//g'| sed 's/\ \ /\ /g'|sed 's/\ /\t/g'\
+> /path_to_output_file/metaphlan3/merged_abundance_table_noID_species.txt
+
+#cat fastq
+parallel -j 1  --xapply 'cat /path_to_output_file/{}_R1_kneaddata_paired_1.fastq /path_to_output_file/{}_R1_kneaddata_paired_2.fastq > /path_to_output_file/concat/{}.fastq'   :::: /path_to_file/samp_list.txt
 
 #humann3
+parallel -j 1   'humann -i /path_to_output_file/concat/{}.fastq -o hmp_subset --output-basename {} --remove-temp-output --o-log Log/{}.humann.log'   :::: /path_to_file/samp_list.txt
+time parallel -j 1   'humann_renorm_table --input {}_pathabundance.tsv --output hmp_subset_pathabundance_relab/{}_pathabundance_relab.tsv --units relab'   :::: /path_to_file/samp_list.txt
+humann_join_tables --input hmp_subset_pathabundance_relab --output humann_pathabundance.tsv --file_name pathabundance_relab
