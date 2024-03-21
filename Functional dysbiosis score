@@ -66,5 +66,34 @@ p1 <-  ggplot(data = q) +
         legend.position = 'none') 
 
 p1
-ggsave(p1,filename="DysbiosisScore_DENSITY_pwy.png", width=10.5, height=5.3)
-  
+ggsave(p1,filename="DysbiosisScore_DENSITY_pwy1.png", width=10.5, height=5.3)
+
+#--------------violinplot---------------
+my_comparisons <- list( c("UC", "CD"),
+                        c("CD", "Controls"),
+                        c("UC", "Controls"))
+
+q$group <- factor(q$group,levels = c("UC","CD","Controls"))
+require(ggpubr)
+p_PWY <- ggplot(q, aes(x = group, score, fill=group)) + 
+  geom_violin( trim = T)+
+  geom_boxplot(width=0.2, color="black", alpha=0.2)+
+  scale_fill_manual(values = c("#E1C05E","#E17153","#33928F"))+
+  stat_compare_means(comparisons=my_comparisons, 
+                     method = 'wilcox.test',
+                     #label.y = c(4.5,4.8,5.1), 
+                     label ="p.signif",
+                    bracket.size = 0.4,
+                    size=7)+
+  theme(legend.position = 'none')+
+  ylab("Functional dysbiosis score")+
+  theme(axis.text.x=element_text(size = 16,color="black"))+
+  theme(axis.text.y=element_text(size = 16,color="black"))+
+  theme(axis.title.y=element_text(size = 16,face = "bold"))+
+  theme(panel.grid = element_blank(),
+        panel.background = element_rect(color = 'black', fill = 'transparent'),
+        strip.background = element_rect(color = 'black') )+
+  theme(panel.border = element_rect(fill=NA,color="black", size=1, linetype="solid"))+
+  xlab(NULL)
+p_PWY
+ggsave(p_PWY,filename="DysbiosisScore_violinplot_pwy2.png", width=4, height=3.5)
