@@ -1,0 +1,97 @@
+library(microeco)
+library(magrittr)
+library(ggplot2)
+library(aplot)
+library(ggpubr)
+
+pcoa_result1 <- reda.csv("pcoa_result1.csv)
+
+x_lim <- range(pcoa_result1[, 1]) * 1.7
+y_lim <- range(pcoa_result1[, 2]) * 1.5
+
+pp1<-ggscatter(pcoa_result1, x = "PCoA1", y = "PCoA2", 
+          color = "group", 
+          size = 4,
+          palette = c("#E1C05E","#E17153","#33928F"),
+          #ellipse = TRUE, 
+          mean.point = TRUE, 
+          mean.point.size = 6,
+          xlab = "PCoA1 (12.7%)",
+          ylab = "PCoA2 (8.7%)",
+          ggtheme = theme_bw(),
+          alpha = 0.3) +
+  scale_y_continuous(limits = y_lim, expand = c(0, 0)) + 
+  scale_x_continuous(limits = x_lim, expand = c(0, 0))+
+  theme(
+    text=element_text(size=14),
+    plot.title = element_text(hjust = 0.5,vjust = 0.5), 
+    axis.text.y=element_text(size=14,color = "black"),
+    axis.text.x=element_text(size=14,  color = "black",angle = 0, hjust = 0.5,
+                             vjust = 0.5),
+    legend.title=element_text(size=14), 
+    legend.text=element_text(size=14),
+    legend.position = 'right' )+
+  theme(panel.grid = element_blank(), 
+        panel.background = element_rect(color = 'black', fill = 'transparent'),
+  )+ 
+  theme(panel.border = element_rect(fill=NA,color="black", size=1.4, linetype="solid"))+
+  theme(axis.title.y=element_text(size = 14,face = "bold"))+
+  theme(axis.title.x=element_text(size = 14,face = "bold"))+
+  guides(fill=guide_legend(keywidth = 1, keyheight = 1))+
+  annotate("text", x = -0.8 , y = -0.4,label = "adonis2\n p = 0.001 *** ",size=6,colour="black") 
+pp1
+
+my_comparisons <- list( c("UC", "CD"),
+                               c("CD", "Controls"),
+                        c("UC", "Controls"))
+pcoa_result1$group <- factor(pcoa_result1$group,level=c("UC","CD","Controls"))
+
+p2 <- ggplot(pcoa_result1, aes(x=group, y=PCoA1,fill = group)) + 
+  geom_boxplot()+ 
+  scale_fill_manual(values=alpha(c("#E1C05E","#E17153","#33928F"), 0.8))+
+  scale_color_manual(values=alpha(c("#E1C05E","#E17153","#33928F"), 0.8))+
+  theme_bw() + 
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())+
+  theme(axis.text.y=element_text(size = 15,color="black"))+
+  theme(panel.border = element_rect(fill=NA,color="black", size=1.4, linetype="solid"))+
+  theme(axis.title.y = element_blank())+
+  theme(axis.title.x = element_blank())+
+  theme(legend.position = "none")+
+  stat_compare_means(comparisons=my_comparisons, 
+                     method = 'wilcox.test',
+                     aes(label = ..p.signif..) ,
+                     label.y =c(0.28,0.34,0.4)  ) +
+  theme(panel.grid = element_blank(), 
+        panel.background = element_rect(color = 'black', fill = 'transparent'),
+        strip.background = element_rect(color = 'black')    
+  )+
+  coord_flip() 
+p2
+
+p3 <- ggplot(pcoa_result1, aes(x=group, y=PCoA2,fill = group)) + 
+  geom_boxplot()+ 
+  #geom_jitter(color="black", size=0.8, alpha=0.9) +
+  scale_fill_manual(values=alpha(c("#E1C05E","#E17153","#33928F"), 0.8))+
+  scale_color_manual(values=alpha(c("#E1C05E","#E17153","#33928F"), 0.8))+
+  theme_bw() + 
+  theme(legend.position = "none")+
+  theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())+
+  theme(axis.title.x = element_blank())+
+  theme(axis.title.y = element_blank())+
+  theme(axis.text.x=element_text(size = 15,color="black",angle=60, hjust=1, vjust=1))+
+  theme(panel.border = element_rect(fill=NA,color="black", size=1.4, linetype="solid"))+
+  stat_compare_means(comparisons=my_comparisons, 
+                     method = 'wilcox.test',
+                     aes(label = ..p.signif..),
+                     label.y =c(0.38,0.42,0.48)
+                     ) +
+  theme(panel.grid = element_blank(), 
+        panel.background = element_rect(color = 'black', fill = 'transparent'),
+        strip.background = element_rect(color = 'black')   
+  )
+p3
+
+g1 <- pp1 %>% insert_top(p2, height = 0.25) %>% insert_right(p3, width = 0.2)
+g1
+
+ggsave("pcoa_margin1.png", g1, width = 11, height= 6.7)
