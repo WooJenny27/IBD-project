@@ -1,0 +1,62 @@
+library(ggplot2)
+library(ggpubr)
+adiv<- read.csv("adiv.csv")
+
+my_comparisons_shannon <- list( c("UC", "CD"),
+                               c("CD", "Controls"),
+                               c("UC", "Controls"))
+
+adiv$Group <- factor(adiv$Group,levels = c("UC","CD","Controls")) 
+
+shannon <- ggviolin(adiv, x = "Group", y = "Shannon",
+                    add = "boxplot", fill = "Group", 
+                    palette = c("#E1C05E","#E17153","#33928F")) +
+  stat_compare_means(comparisons=my_comparisons_shannon, 
+                     method = 'wilcox.test',
+                     label.y = c(4.5,4.8,5.1), 
+                     bracket.size = 0.5,
+                     size=5)+
+  #scale_y_continuous(limits = c(-0.5,5),breaks=seq(0,5,1))+
+  theme(legend.position = 'none')+
+  ylab("Shannon Index")+
+  theme(axis.text.x=element_text(size = 19))+
+  theme(axis.text.y=element_text(size = 17))+
+  theme(axis.title.y=element_text(size = 18,face = "bold"))+
+  theme(panel.grid = element_blank(), 
+        panel.background = element_rect(color = 'black', fill = 'transparent'),
+        strip.background = element_rect(color = 'black')   )+
+  theme(panel.border = element_rect(fill=NA,color="black", size=1, linetype="solid"))+
+  xlab(NULL)
+print(shannon)
+
+#-------Observed_species---------
+my_comparisons_Observed_species <-  list( c("UC", "CD"),
+                                          c("CD", "Controls"),
+                                          c("UC", "Controls"))
+
+adiv$Group <- factor(adiv$Group,levels = c("UC","CD","Controls")) 
+
+Observed_species <- ggviolin(adiv, x = "Group", y = "Observed_species",
+                             add = "boxplot", fill = "Group", 
+                             palette = c("#E1C05E","#E17153","#33928F")) +
+  stat_compare_means(comparisons=my_comparisons_shannon, 
+                     method = 'wilcox.test',
+                     label.y = c(225,240,255), 
+                    # label ="p.signif",
+                     bracket.size = 0.5,
+                     size=5)+
+  ylab("Observed Species")+
+  theme(legend.position = 'none')+
+  theme(axis.text.x=element_text(size = 19))+
+  theme(axis.text.y=element_text(size = 17))+
+  theme(axis.title.y=element_text(size = 18,face = "bold"))+
+  theme(panel.grid = element_blank(), 
+        panel.background = element_rect(color = 'black', fill = 'transparent'),
+        strip.background = element_rect(color = 'black'))+
+  theme(panel.border = element_rect(fill=NA,color="black", size=1, linetype="solid"))+
+  xlab(NULL)
+print(Observed_species)
+
+diversity <- shannon + Observed_species
+diversity 
+ggsave(diversity,filename="alpha_diversity1.png", width=8.33, height=7.38)
