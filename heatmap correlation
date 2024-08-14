@@ -1,0 +1,48 @@
+library(psych)
+library(Hmisc)
+library(circlize)
+library(colorRamp2)
+library(ComplexHeatmap)
+otu_ALL <- read.csv("data_abundance_CD_9MARKERS.csv", row.names= 1)
+res2 <- rcorr(as.matrix(otu_ALL),type = "spearman")
+res2
+data_corr_ALL <- as.data.frame(res2$r)
+data_p_ALL <- as.data.frame(res2$P)
+
+data_p_ALL[data_p_ALL>=0 & data_p_ALL < 0.001] <- "***"
+data_p_ALL[data_p_ALL>=0.001 & data_p_ALL < 0.01] <- "**"
+data_p_ALL[data_p_ALL>=0.01 & data_p_ALL < 0.05] <- "*"
+data_p_ALL[data_p_ALL>=0.05 & data_p_ALL <= 1] <- ""
+data_p_ALL[is.na(data_p_ALL)] <- ""
+
+data_corr_ALL <-as.matrix(data_corr_ALL)
+data_p_ALL <-as.matrix(data_p_ALL)
+
+species_anno <- read.table("row_anno.txt", row.names = 1,header=T,  sep="\t")
+annotation_r =  data.frame(species_anno)
+annotation_c =  data.frame(species_anno)
+
+ann_colors = list (group = c ( CD_depleted = "#33928F",
+                               CD_enriched = "#E17153") )
+
+row_order <- rownames(annotation_r)
+col_order <- rownames(annotation_c)
+
+p1<-pheatmap(data_corr_ALL,
+             border="white",
+             cluster_cols = F,
+             cluster_rows = F,
+             annotation_col = annotation_c,
+             annotation_row = annotation_r,
+             display_numbers= data_p_ALL,
+             annotation_colors = ann_colors,
+             row_order = row_order,
+             name = "Cor",
+             col = colorRamp2(c(-0.3, 0, 0.5), 
+                 c("#5281B9", "#dfe5ed", "#D73729")),
+             gaps_col= 6,
+             gaps_row= 6,
+             fontsize = 20 )
+pdf('heatmap_cor.pdf',width=6, height= 4) 
+p1
+dev.off()
