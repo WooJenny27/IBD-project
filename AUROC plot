@@ -1,0 +1,128 @@
+library(randomForest)
+library(caret)
+library(e1071)
+fit_rf2 <- readRDS("fit_rf2Model.rds")
+
+#------TEST-PRISM----
+PRISM<- read.table("PRISM_68CD_34control.txt", header=T, row.names = 1, sep="\t")
+str(PRISM)
+PRISM$group <- as.factor(PRISM$group)
+
+PRISM_predict <- predict(fit_rf2, PRISM)
+compare_PRISM <- table(PRISM$group, PRISM_predict, dnn = c('Actual', 'Predicted'))
+compare_PRISM
+confusionMatrix(PRISM_predict,PRISM$group) 
+
+prediction_prob_PRISM <- predict(fit_rf2, newdata=PRISM, type="prob")
+library(pROC)
+roc_curve_PRISM <- roc(PRISM$group, prediction_prob_PRISM[,1])
+roc_curve_PRISM
+
+#------TEST-NETHERLAND----
+NETHERLAND<- read.table("NETHERLAND_20CD_22control.txt", header=T, row.names = 1, sep="\t")
+str(NETHERLAND)
+NETHERLAND$group <- as.factor(NETHERLAND$group)
+
+NETHERLAND_predict <- predict(fit_rf2, NETHERLAND)
+compare_NETHERLAND <- table(NETHERLAND$group, NETHERLAND_predict, dnn = c('Actual', 'Predicted'))
+compare_NETHERLAND
+confusionMatrix(NETHERLAND_predict,NETHERLAND$group) 
+
+prediction_prob_NETHERLAND <- predict(fit_rf2, newdata=NETHERLAND, type="prob")
+library(pROC)
+roc_curve_NETHERLAND <- roc(NETHERLAND$group, prediction_prob_NETHERLAND[,1])
+roc_curve_NETHERLAND
+
+#------TEST-GUANGDONG----
+GUANGDONG<- read.table("guangdong_48CD_54control.txt", header=T, row.names = 1, sep="\t")
+str(GUANGDONG)
+GUANGDONG$group <- as.factor(GUANGDONG$group)
+
+GUANGDONG_predict <- predict(fit_rf2, GUANGDONG)
+compare_GUANGDONG <- table(GUANGDONG$group, GUANGDONG_predict, dnn = c('Actual', 'Predicted'))
+compare_GUANGDONG
+confusionMatrix(GUANGDONG_predict,GUANGDONG$group) 
+
+prediction_prob_GUANGDONG <- predict(fit_rf2, newdata=GUANGDONG, type="prob")
+library(pROC)
+roc_curve_GUANGDONG <- roc(GUANGDONG$group, prediction_prob_GUANGDONG[,1])
+roc_curve_GUANGDONG
+
+#-----PUBLIC roc-------
+auc_USA <- round(auc(roc_curve_PRISM),4) 
+auc_Netherlands <- round(auc(roc_curve_NETHERLAND),4)
+auc_Guangdong<- round(auc(roc_curve_GUANGDONG),4)
+
+lab1<- paste0( "AUC = ",auc_USA )
+lab2<- paste0( "AUC = ",auc_Netherlands)
+lab3<- paste0( "AUC = ",auc_Guangdong)
+
+library(cols4all)
+library(ggplot2)
+library(pROC)
+mycol3 <- c4a('set1',3)
+
+g2 <- ggroc(list(UnitedStates=roc_curve_PRISM, 
+                 Netherlands=roc_curve_NETHERLAND, 
+                 MainlandChina=roc_curve_GUANGDONG),
+                 legacy.axes = TRUE,  
+                 size = 1.2)+
+  theme_bw()+
+  xlab("1-Specificity")+
+  ylab("Sensitivity")+
+  theme(legend.position = c(.5,.148),
+        legend.key.width = unit(0.7,"cm"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())+
+  guides(color=guide_legend(title = ""))+
+  ggtitle("CD Public Datasets") + 
+  theme(title = element_text(size = 16,face = "bold",color="black"),
+        plot.title = element_text(hjust=0.5))+
+  scale_x_continuous(expand = c(0.02,0))+
+  scale_y_continuous(expand = c(0.02,0))+
+  theme(axis.title.x = element_text(size = 16,face = "bold"))+
+  theme(axis.text.x=element_text(size = 16,color="black",hjust=0.8))+
+  theme(axis.text.y=element_text(size = 16,color="black"))+
+  theme(axis.title.y=element_text(size = 16,face = "bold"))+ 
+  theme(legend.text = element_text(size = 18))+
+  theme(panel.border = element_rect(fill=NA,color="black", size=1, 
+                                    linetype="solid"))+
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color="black", size=0.6,
+               linetype=2)+
+  scale_colour_manual(values = mycol3)+ 
+  annotate( "text",x = 0.87,y = 0.15, label=lab1,size= 5.5)+
+  annotate( "text",x = 0.87,y = 0.10, label=lab2,size= 5.5)+
+  annotate( "text",x = 0.87,y = 0.05, label=lab3,size= 5.5)
+g2
+
+roc.list <- list(roc_curve_PRISM,roc_curve_NETHERLAND,roc_curve_GUANGDONG)
+
+ci.list <- lapply(roc.list, ci.se, specificities = seq(0, 1, l = 25))
+
+dat.ci.list <- lapply(ci.list, function(ciobj) 
+  data.frame(x = as.numeric(rownames(ciobj)),
+             lower = ciobj[, 1],
+             upper = ciobj[, 3]))
+
+color1=list("#E41A1C" ,"#377EB8", "#4DAF4A")
+p <- g2 + 
+  geom_ribbon(
+    data = dat.ci.list[[2]],
+    aes(x = 1-x, ymin = lower, ymax = upper),
+    fill = color1[2],
+    alpha = 0.1,
+    inherit.aes = F) +
+  geom_ribbon(
+    data = dat.ci.list[[3]],
+    aes(x = 1-x, ymin = lower, ymax = upper),
+    fill = color1[3],
+    alpha = 0.1,
+    inherit.aes = F) +
+  geom_ribbon(
+  data = dat.ci.list[[1]],
+  aes(x = 1-x, ymin = lower, ymax = upper),
+  fill = color1[1],
+  alpha = 0.1,
+  inherit.aes = F)
+p
+ggsave(p, file='PublicDataset_CD20240420.png', width=6.41, height=6.47)
