@@ -1,0 +1,43 @@
+require(cowplot)
+require(tidyverse)
+require(ggplot2)
+require(ggsci)
+require(ggpubr)
+
+library(ggplot2)
+library(reshape2)
+
+dataCD <- read.csv("CDpwy_cor_POD.csv",row.names = 1)
+colnames(dataCD)
+
+p <- ggplot(data=dataCD, aes(x=CDpod, y=log10(score)))+ 
+  geom_point(size=4,alpha=0.6,aes(color=group)) + 
+  stat_cor(method = "spearman", size=5) +
+  xlab("Probability of disease") +
+  ylab("Functional dysbiosis score (log)") +
+  scale_color_manual(values = c("#E17153","#33928F"),name="Group")+ 
+  geom_smooth(color="black",method="lm",se=TRUE,fill = "gray")+
+  theme_bw()+
+  theme(strip.text = element_text(size = 18,face = "bold.italic"))+
+  theme(strip.background.x = element_rect(fill = "gray"))  +
+  theme(axis.text.x=element_text(size = 18))+
+  theme(axis.text.y=element_text(size = 18))+
+  theme(axis.title.y=element_text(size = 18,face = "bold"))+
+  theme(axis.title.x=element_text(size = 18,face = "bold"))+
+  theme(legend.text =element_text(size = 18))+
+  theme(legend.title =element_text(size = 18,face = "bold"))+
+  theme(axis.text = element_text(color = 'black'),
+        legend.position = '')  + 
+  theme(panel.grid = element_blank(), 
+        panel.background = element_rect(color = 'black', fill = 'transparent'),
+        strip.background = element_rect(color = 'black'))
+p
+
+p2<- ggExtra::ggMarginal(p, type = "density",
+                         xparams=list(fill = "green"),
+                         yparams = list(fill="orange"),
+                         groupColour = T,
+                         groupFill=T)
+p2
+
+ggsave(p2, file='corr_score_CDPOD.png', width=10, height=7)  
