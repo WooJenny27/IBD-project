@@ -1,0 +1,31 @@
+data <- read.table("plot_AUC_CD.txt",header = T,sep = "\t")
+
+library(ggplot2)
+p_AUC <- ggplot(data, aes(x = num, y = mean)) +
+  geom_point(size= 3) +
+  geom_errorbar(aes(ymin = mean - SD, ymax = mean + SD), width = 1.2) +
+  scale_x_reverse(limits = c(162, -1), breaks = seq(0, 160, 20),expand=c(0.01,0)) +
+  scale_y_continuous(limits = c(0.7, 0.97), breaks = seq(0.75, 0.95, 0.05)) + 
+  geom_errorbar(aes(ymin = mean - SD, ymax = mean + SD), width = 0.2,cex=0.8)+
+  geom_hline(aes(yintercept = 0.909554),color = "#C82423",linetype="dashed",linewidth=0.8)+
+  geom_vline(aes(xintercept = 8),color = "#C82423",linetype="dashed",size=0.8)+
+  xlab("Number of feature") +
+  ylab("AUC") +
+  theme(axis.text.x=element_text(size = 17))+
+  theme(axis.text.y=element_text(size = 17))+
+  theme(axis.title.y=element_text(size = 18,face = "bold"))+
+  theme(axis.title.x=element_text(size = 18,face = "bold"))+
+  theme(legend.title=element_text(size = 17,face = "bold"))+
+  theme(legend.text=element_text(size = 15))+
+  theme(panel.grid = element_blank(), #从图中删除非数据元素
+        #修改面板背景
+        panel.background = element_rect(color = 'black', fill = 'transparent'),
+        strip.background = element_rect(color = 'black')
+  )+
+  theme(panel.border = element_rect(fill=NA,color="black", size=1, linetype="solid"))+
+  theme(axis.text = element_text(color = 'black'),
+        legend.position = 'none') 
+
+p_AUC
+
+ggsave(p_AUC,file="p_AUC_CD.png",width = 17, height=4)
