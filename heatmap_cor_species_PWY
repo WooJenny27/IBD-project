@@ -1,0 +1,73 @@
+library(psych)
+library(Hmisc)
+otu_ALL <- read.csv("data_UC_79PWY_species.csv", row.names= 1)
+res2 <- rcorr(as.matrix(otu_ALL),type = "spearman")
+res2
+data_corr_ALL <- as.data.frame(res2$r)
+data_p_ALL <- as.data.frame(res2$P)
+data_corr_ALL1 <- data_corr_ALL[1:10, 11:89]
+data_p_ALL1 <- data_p_ALL[1:10, 11:89]
+data_corr_ALL1 <- t(data_corr_ALL1)
+data_p_ALL1 <- t(data_p_ALL1)
+data_p_ALL2 <-as.matrix(data_p_ALL1)
+
+data_p_ALL2[data_p_ALL2>=0 & data_p_ALL2 < 0.001] <- "***"
+data_p_ALL2[data_p_ALL2>=0.001 & data_p_ALL2 < 0.01] <- "**"
+data_p_ALL2[data_p_ALL2>=0.01 & data_p_ALL2 < 0.05] <- "*"
+data_p_ALL2[data_p_ALL2>=0.05 & data_p_ALL2 <= 1] <- ""
+
+species_anno <- read.table("row_anno.txt", row.names = 1,header=T,  sep="\t")
+PWY_anno <- read.table("col_anno.txt", row.names = 1,header=T,  sep="\t")
+annotation_r =  data.frame(PWY_anno)
+annotation_c =  data.frame(species_anno)
+
+ann_colors = list (
+  group = c ( UC_depleted = "#33928F", UC_enriched = "#E1C05E") ,
+  Superclass = c("Aldehyde Degradation" = "#738CE6",
+                 "Amine and Polyamine Degradation" = "#3396E1",
+                 "Amino Acid Biosynthesis" = "#009FD8",
+                 "Amino Acid Degradation" = "#00AAB9",
+                 "Carbohydrate Biosynthesis" = "#00ACA5",
+                 "Carbohydrate Degradation" = "#00AA5A",
+                 "Carboxylate Degradation" = "#29A638",
+                 "Cell Structure Biosynthesis" = "#5EA200",
+                 "Cofactor, Carrier, and Vitamin Biosynthesis" = "#7D9D00",
+                 "Electron Transfer Chains" = "#969700",
+                 "Fatty Acid and Lipid Biosynthesis" = "#ABB065",
+                 "Fatty Acid and Lipid Degradation" = "#B9AC65",
+                 "Fermentation" =  "#D3794D",
+                 "Generation of Precursor Metabolites and Energy" = "#DC716C" ,
+                 "Hydrogen Production" = "#E16A86",
+                 "Interconversions" = "#C88123" ,
+                 "Nucleoside and Nucleotide Biosynthesis" = "#BA8900",
+                 "Other Biosynthesis" = "#C5A76A",
+                 "Pentose Phosphate Pathways" = "#D6A07C",
+                 "Photosynthesis" = "#DF9A8F",
+                 "Polyprenyl Biosynthesis" = "#E3979D",
+                 "Respiration" = "#E093C3",
+                 "Secondary Metabolite Degradation" = "#CB6CD5",
+                 "Storage Compound Biosynthesis" = "#B675E0",
+                 "Superpathways" = "#9A81E6"))
+
+library(ComplexHeatmap)
+library(colorRamp2)
+p1<-pheatmap(data_corr_ALL1,
+             border="black",
+             cluster_cols = F,#显示横向纵向聚类
+             cluster_rows = F,
+             annotation_col = annotation_c,
+             annotation_row = annotation_r,
+             display_numbers= data_p_ALL2,
+             annotation_colors = ann_colors,
+            row_order = row_order, 
+            name = "Cor",
+            col = colorRamp2(c(-0.4, 0, 0.4), 
+                             c("#5281B9", "#FFFDC1", "#D73729")),
+             gaps_col= 4,
+             gaps_row= 16,
+             fontsize = 12 )
+          
+pdf('heatmap_species_PWY.pdf',width=10, height= 15) 
+
+p1
+dev.off()
