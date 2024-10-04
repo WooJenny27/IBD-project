@@ -17,8 +17,7 @@ p_AUC <- ggplot(data, aes(x = num, y = mean)) +
   theme(axis.title.x=element_text(size = 18,face = "bold"))+
   theme(legend.title=element_text(size = 17,face = "bold"))+
   theme(legend.text=element_text(size = 15))+
-  theme(panel.grid = element_blank(), #从图中删除非数据元素
-        #修改面板背景
+  theme(panel.grid = element_blank(),
         panel.background = element_rect(color = 'black', fill = 'transparent'),
         strip.background = element_rect(color = 'black')
   )+
