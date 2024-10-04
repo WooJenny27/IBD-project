@@ -53,7 +53,7 @@ library(ComplexHeatmap)
 library(colorRamp2)
 p1<-pheatmap(data_corr_ALL1,
              border="black",
-             cluster_cols = F,#显示横向纵向聚类
+             cluster_cols = F,
              cluster_rows = F,
              annotation_col = annotation_c,
              annotation_row = annotation_r,
