@@ -26,10 +26,7 @@ fit_rf2 <- train(group~ .,
                  metric = "Accuracy",
                  tuneGrid = tuneGrid2,
                  trControl = trControl,
-                 importance = TRUE,
-                 nodesize = 15,
-                 maxnodes =20,
-                 ntree = 800)
+                 importance = TRUE)
 print(fit_rf2)
 
 importance <- varImp(fit_rf2,scale=FALSE)
